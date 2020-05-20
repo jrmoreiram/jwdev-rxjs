@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="vieport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <!-- Import css -->
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <!-- Import rxjs -->
+    <script src="https://unpkg.com/@reactivex/rxjs@6.3.3/dist/global/rxjs.umd.js"></script>
+    <title>Document</title>
+</head>
+
+<style>
+    .ul {
+        background: #3399ff;
+        padding: 20px;
+    }
+
+    li {
+        background: #cce5ff;
+        margin: 5px;
+        padding: 5px;
+        margin-left: 35px;
+    }
+</style>
+
+<body>
+    <!-- Conteúdo -->
+    <div class="w3-container w3-blue">
+        <h2>Busca Pais</h2>
+    </div>
+
+    <form class="w3-container">
+        <p>
+            <label>País</label>
+            <input class="w3-input" type="text" placeholder="Digite País..."></p>
+        <p>
+            <ul class="ul"></ul>
+    </form>
+
+    <script>
+        //Imports dos operadores.
+        const { fromEvent, ajax: { ajax }, of } = rxjs;
+        const { pluck, map, debounceTime, switchMap, catchError, distinctUntilChanged, startWith } = rxjs.operators;
+
+        const input = fromEvent(document.querySelector("input"), 'input');
+        const ul = document.querySelector("ul");
+
+        const resultView = res => {
+            ul.innerHTML = res.map(e => `<li>${e}</li>`).join('');
+        }
+
+        const getCountriesApi = term => ajax(`https://restcountries.eu/rest/v2/name/${term}?fields=name`).pipe(
+            //Extrai a propriedade response do objeto.
+            pluck('response'),
+
+            //Pegar o nome do pais.
+            map(resposta => resposta.map(e => e.name))
+        )
+
+        input.pipe(
+            debounceTime(300),
+            pluck('target', 'value'),
+            map(e => e.trim()),
+            //Distinguir entre as mudanças que ocorreram no valor anterio e corrente.
+            distinctUntilChanged(),
+            switchMap(term => {
+                if (!term || term.length < 3) return of([])
+                return getCountriesApi(term)
+            }),
+            catchError((err, source) => {
+                console.error(err)
+                return source.pipe(
+                    startWith([])
+                );
+            })
+
+        ).subscribe(resultView);
+    </script>
+</body>
+
+</html>

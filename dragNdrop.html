@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="vieport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+
+    <script src="https://unpkg.com/@reactivex/rxjs@6.3.3/dist/global/rxjs.umd.js"></script>
+    <title>Document</title>
+    <style>
+        .card {
+            width: 300px;
+            height: 300px;
+            background: #666;
+            border: solid 1px #333;
+            cursor: move;
+            position: absolute;
+            box-shadow: #333 1px 1px 25px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Conteúdo -->
+    <div class="card"></div>
+
+    <script>
+        const { fromEvent, merge } = rxjs;
+        const { switchMap, takeUntil, map, delay, filter, tap, skip } = rxjs.operators;
+        const card = document.querySelector('.card');
+
+        //$: no final trata-se de uma convenção para identificar um observable, captura card evento mousedow. 
+        const mouseDown$ = fromEvent(card, 'mousedown');
+        const mouseUp$ = fromEvent(document, 'mouseup');
+        const mouseMove$ = fromEvent(document, 'mousemove');
+
+        const keyUp$ = fromEvent(document, 'keyup');
+
+        const dragAndDrop$ = mouseDown$.pipe(
+            //Ponto inicial click(start).
+            map(e => ({
+                //Eventos start.
+                x: e.clientX,
+                y: e.clientY,
+                target: {
+                    x: e.target.offsetLeft,
+                    y: e.target.offsetTop,
+                }
+            })),
+            switchMap(start => merge(
+                mouseMove$.pipe(
+                    //Transformar os valores nos valores finais.
+                    map(e => ({
+                        //Eventos mouseMove.
+                        x: e.clientX - start.x + start.target.x,
+                        y: e.clientY - start.y + start.target.y,
+                    }),
+                        takeUntil(mouseUp$)
+                    )),
+                keyUp$.pipe(
+                    //filtra pelo código da tecla espaço.
+                    filter(e => e.which === 32),
+                    tap(tecla => {
+                        document.body.insertBefore(card.cloneNode(true), card)
+                    }),
+                    //Ignora as emissões que vem stream recebe como argumento a quantidade emissões desejadas sem parâmetro ignora todas.
+                    skip()
+                )
+            )
+            )
+        );
+
+        dragAndDrop$.pipe(
+            delay(250)
+        ).subscribe(val => {
+            card.style.top = `${val.y}px`;
+            card.style.left = `${val.x}px`;
+        });
+
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <script src="https://unpkg.com/@reactivex/rxjs@6.3.3/dist/global/rxjs.umd.js"></script>
+  <title>Control Concurrence</title>
+</head>
+
+<body>
+  <script>
+    const {
+      of,
+      ajax: { ajax },
+      merge,
+      concat,
+    } = rxjs;
+    const { mergeMap, pluck, concatMap, switchMap, exhaustMap, combineAll } = rxjs.operators;
+
+    const api = (response, delay) =>
+      ajax({
+        url: `http://localhost:5200/response/${JSON.stringify(response)}/delay/${delay}/`
+      });
+
+    const a = api({ data: "A" }, 1000);
+    const b = api({ data: "B" }, 1000);
+    const c = api({ data: "C" }, 800);
+    const d = api({ data: "D" }, 1800);
+    const e = api({ data: "E" }, 1200);
+    const f = api({ data: "F" }, 1600);
+    const g = api({ data: "G" }, 2800);
+    const h = api({ data: "H" }, 700);
+
+    of(a, b, c, d, e, f, g, h)
+      .pipe(
+        // Operador mergeMap junta todas as requisões e as executa em paralelo.
+        // mergeMap(e => e),
+        // pluck('response', 'data')
+
+        // Operador concatMap espera uma requisão terminar e executa a próxima em serial.
+        // concatMap(e => e),
+        // pluck('response', 'data')
+
+        // Operador switchMap executa apenas a nova requisição e cancela as anteriores.
+        // switchMap(e => e),
+        // pluck('response', 'data')
+
+        // Operador exhaustMap executa apenas a primeira requisição e cancela as próximas.
+        // exhaustMap(e => e),
+        // pluck('response', 'data')
+
+        // Limitar quantas requisição estão sendo executadas por vez.
+        // mergeMap(e => e, 4),
+        // pluck('response', 'data')
+
+        // Operador combineAll quando steraming of terminar combina todos em um array e executa um unico subscribe.
+        mergeMap(e => e, 4),
+        pluck('response', 'data'),
+        combineAll()
+      )
+      //Operadores criadores.
+      // merge(a, b, c, d, e, f, g, h)
+      //   .pipe(
+      //     pluck('response', 'data')
+      //   )
+      // concat(a, b, c, d, e, f, g, h)
+      //   .pipe(
+      //     pluck('response', 'data')
+      //   )
+      .subscribe(
+        x => console.log(x),
+        err => console.log(err),
+        _ => console.log("Complete")
+      );
+
+  </script>
+</body>
+
+</html>

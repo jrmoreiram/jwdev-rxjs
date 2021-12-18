@@ -1,4 +1,4 @@
-# Curso - RxJs
+# Curso - RxJS
 Curso sobre rxjs (reactiveX) demonstrando como funciona um código reativo utilizando rxjs.
 
 ![](images/maxresdefault.jpg?raw=true)

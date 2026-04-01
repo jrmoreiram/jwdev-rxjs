@@ -39,7 +39,7 @@
 - [Sobre o Curso](#-sobre-o-curso)
 - [Contribuindo](#-contribuindo)
 - [Licença](#-licença)
-- [Autor](#%EF%B8%8F-como-usar)
+- [Autor](#%E2%80%8D-autor)
 
 ---
 
